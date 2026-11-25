@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ブロスタ アカウント管理シート</title>
+<style>
+  :root {
+    --bg-main: #0c101b;
+    --bg-panel: #151b2c;
+    --bg-row: #1a2236;
+    --bg-row-hover: #222d47;
+    --bg-input: #0a0e18;
+    --border: #38466b;
+    --border-strong: #586fa6;
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --accent-gold: #fbbf24;
+    --accent-pp: #f43fd4;
+    --accent-leg: #facc15;
+    --accent-gem: #a3e635;
+    --accent-hc: #d946ef;
+    --accent-star: #facc15;
+    --accent-blue: #3b82f6;
+    --accent-red: #ef4444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-size: 13px;
+    line-height: 1.4;
+    overflow-x: hidden;
+  }
+
+  /* ヘッダー */
+  header {
+    background: var(--bg-panel);
+    border-bottom: 2px solid var(--border-strong);
+    padding: 10px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .logo-badge {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #000;
+    font-weight: 900;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  .brand h1 { font-size: 15px; font-weight: 700; }
+  .badge-count {
+    background: #283352;
+    color: #93c5fd;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  input[type="text"], input[type="number"], select, textarea {
+    background: var(--bg-input);
+    border: 1px solid var(--border-strong);
+    color: var(--text-main);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent-blue); }
+
+  .btn {
+    background: #26314d;
+    color: var(--text-main);
+    border: 1px solid var(--border-strong);
+    padding: 6px 11px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: #334166; }
+  .btn-primary { background: #2563eb; border-color: #60a5fa; color: #fff; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-gold { background: #d97706; border-color: #fbbf24; color: #000; }
+  .btn-gold:hover { background: #b45309; color: #fff; }
+  .btn-danger { background: #991b1b; border-color: #ef4444; color: #fff; }
+  .btn-danger:hover { background: #7f1d1d; }
+
+  /* ステータスサマリーバー */
+  .summary-bar {
+    background: #121726;
+    border-bottom: 2px solid var(--border);
+    padding: 7px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+    align-items: center;
+  }
+  .summary-bar span b { color: var(--text-main); }
+  .c-gold { color: var(--accent-gold) !important; }
+  .c-pp { color: var(--accent-pp) !important; }
+  .c-leg { color: var(--accent-leg) !important; }
+  .c-gem { color: var(--accent-gem) !important; }
+  .c-hc { color: var(--accent-hc) !important; }
+
+  /* メインテーブル */
+  .sheet-container { width: 100%; padding: 10px 12px 48px; }
+  .sheet-header, .account-row {
+    display: grid;
+    grid-template-columns: 102px 152px 1.25fr 1fr;
+    border: 2px solid var(--border-strong);
+    background: var(--bg-row);
+  }
+  .sheet-header {
+    background: #13192b;
+    font-size: 11px;
+    font-weight: 800;
+    color: #cbd5e1;
+    border-radius: 8px 8px 0 0;
+    position: sticky;
+    top: 52px;
+    z-index: 40;
+  }
+  .sheet-header > div {
+    padding: 8px;
+    border-right: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .sheet-header > div:last-child { border-right: none; }
+
+  .account-row {
+    border-top: 2px solid var(--border-strong);
+    margin-bottom: 6px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    transition: background 0.15s, border-color 0.15s;
+    cursor: pointer;
+  }
+  .account-row:hover {
+    background: var(--bg-row-hover);
+    border-color: #7c96d1;
+  }
+  .account-row.is-master {
+    border-left: 5px solid var(--accent-star);
+  }
+
+  .cell {
+    padding: 8px;
+    border-right: 2px solid var(--border);
+    min-width: 0;
+  }
+  .cell:last-child { border-right: none; }
+
+  /* 列1: トロフィー・コイン・パワポ・エメ */
+  .stats-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    background: rgba(8, 12, 22, 0.45);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .stat-label { font-size: 9px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.04em; }
+  .stat-val { font-size: 12px; font-weight: 800; line-height: 1.25; }
+
+  /* 列2: Supercell ID & マスター★ & スキン縦積み */
+  .id-skin-col { display: flex; flex-direction: column; justify-content: space-between; gap: 6px; }
+  .sc-id-header { display: flex; flex-direction: column; gap: 3px; }
+  .sc-id-box { word-break: break-all; font-weight: 800; font-size: 12px; color: #f87171; line-height: 1.25; }
+  .master-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    width: fit-content;
+    background: rgba(250, 204, 21, 0.18);
+    border: 1px solid #facc15;
+    color: #fde047;
+    font-size: 10px;
+    font-weight: 900;
+    padding: 1px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.03em;
+  }
+  .sc-tag { font-size: 10px; color: var(--text-muted); font-family: monospace; display: block; }
+
+  .skins-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(8, 12, 22, 0.45);
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .skin-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .skin-line-left {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+  }
+  .skin-line-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .skin-icon-img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    flex-shrink: 0;
+    display: block;
+  }
+
+  /* 列3 & 列4: キャラ配置エリア */
+  .brawler-section { display: flex; flex-direction: column; gap: 6px; justify-content: space-between; }
+  .tier-row { display: flex; align-items: flex-start; gap: 6px; }
+  .tier-divider { border-top: 1px solid var(--border); padding-top: 6px; }
+  .tier-tag {
+    flex-shrink: 0;
+    width: 40px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 0;
+    border-radius: 4px;
+    margin-top: 1px;
+  }
+  .tag-max { background: rgba(251, 191, 36, 0.18); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.45); }
+  .tag-wip { background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.45); }
+  .tag-hc { background: rgba(217, 70, 239, 0.18); color: #e879f9; border: 1px solid rgba(217, 70, 239, 0.45); }
+  .tag-lv9 { background: rgba(148, 163, 184, 0.18); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.4); }
+
+  .brawler-chips { display: flex; flex-wrap: wrap; gap: 3px; flex: 1; align-items: center; }
+  .tier-count { flex-shrink: 0; font-size: 10px; color: var(--text-muted); font-weight: 700; padding-top: 3px; }
+
+  /* キャラチップ */
+  .b-chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.85);
+    border: 1px solid rgba(255,255,255,0.28);
+    user-select: none;
+    overflow: visible;
+  }
+  .b-chip.no-img { padding: 0 5px; min-width: 32px; }
+  .b-chip.has-img { width: 26px; height: 26px; padding: 0; background: #0b0e17; }
+  .b-chip.has-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 3px; display: block; }
+
+  .mini-badge {
+    position: absolute;
+    top: -6px;
+    right: -4px;
+    font-size: 8px;
+    font-weight: 900;
+    padding: 0 3px;
+    border-radius: 3px;
+    line-height: 1.2;
+    z-index: 2;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  }
+  .mb-heart { background: #ec4899; color: #fff; }
+  .mb-lv9 { background: #f59e0b; color: #000; }
+  .mb-lv10 { background: #38bdf8; color: #000; }
+  .mb-nobuff { background: #1e293b; color: #f8fafc; border: 1px solid #94a3b8; }
+
+  .note-pill {
+    display: inline-block;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #e2e8f0;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-top: 3px;
+  }
+  .all-hc-banner {
+    color: #f5d0fe;
+    background: rgba(217, 70, 239, 0.16);
+    border: 1px solid rgba(217, 70, 239, 0.4);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* モーダル共通 */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.78);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--bg-panel);
+    border: 2px solid var(--border-strong);
+    border-radius: 10px;
+    width: 100%;
+    max-width: 980px;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+  }
+  .modal-header {
+    padding: 12px 16px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #121726;
+  }
+  .modal-header h2 { font-size: 15px; }
+  .modal-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+  .modal-footer {
+    padding: 10px 16px;
+    border-top: 2px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #121726;
+  }
+
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+
+  .master-toggle-box {
+    background: rgba(250, 204, 21, 0.08);
+    border: 1px solid rgba(250, 204, 21, 0.45);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .master-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #fde047;
+    cursor: pointer;
+  }
+  .master-toggle-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #facc15;
+    cursor: pointer;
+  }
+
+  /* スキン所持数UIカード */
+  .skin-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .skin-card {
+    background: #111624;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 9px 11px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .skin-card.card-hc { border-color: rgba(217, 70, 239, 0.55); background: rgba(217, 70, 239, 0.08); }
+  .skin-card.card-leg { border-color: rgba(250, 204, 21, 0.55); background: rgba(250, 204, 21, 0.08); }
+  .skin-card.card-gold { border-color: rgba(251, 191, 36, 0.55); background: rgba(251, 191, 36, 0.08); }
+
+  .skin-card-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .skin-card-img { width: 28px; height: 28px; object-fit: contain; flex-shrink: 0; }
+  .skin-card-title { font-size: 11px; font-weight: 800; color: var(--text-main); line-height: 1.25; }
+  .skin-card-sub { font-size: 9px; color: var(--text-muted); }
+  .skin-card input[type="number"] { width: 70px; text-align: right; font-weight: 800; font-size: 13px; }
+
+  /* 編集モーダル内のキャラ選択パレット */
+  .target-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: #111624;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+  }
+  .target-tab {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid transparent;
+    background: #1e263d;
+    color: var(--text-muted);
+  }
+  .target-tab.active { background: #2563eb; color: #fff; border-color: #60a5fa; }
+
+  .selected-zone { background: #101522; border: 1px dashed var(--border-strong); border-radius: 8px; padding: 10px; min-height: 54px; }
+  .selected-zone-title { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+    gap: 5px;
+    max-height: 230px;
+    overflow-y: auto;
+    padding: 8px;
+    background: #0d111c;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+  }
+  .palette-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 6px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.8);
+    transition: transform 0.08s;
+  }
+  .palette-item:hover { transform: scale(1.03); }
+  .palette-item.in-list { outline: 2px solid #fff; box-shadow: 0 0 8px rgba(255,255,255,0.5); }
+  .palette-item img { width: 18px; height: 18px; border-radius: 3px; object-fit: cover; }
+
+  /* キャラ画像・新キャラ追加・順番変更モーダル */
+  .brawler-mgr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 8px; }
+  .brawler-mgr-card {
+    background: #111624;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .brawler-mgr-info { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .brawler-mgr-info span { font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mgr-actions { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+  .mini-btn {
+    background: #222c46;
+    color: var(--text-main);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .mini-btn:hover { background: #334166; }
+  .mini-btn.del { background: #7f1d1d; border-color: #ef4444; }
+  .mini-btn.del:hover { background: #991b1b; }
+
+  /* 検索ハイライト */
+  .b-chip.highlight-match { outline: 2px solid #fff; box-shadow: 0 0 10px #fbbf24; transform: scale(1.12); z-index: 5; }
+  .b-chip.dimmed { opacity: 0.25; }
+
+  @media (max-width: 900px) {
+    .sheet-header, .account-row { grid-template-columns: 84px 128px 1fr 1fr; }
+    .skin-cards-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo-badge">BS</div>
+    <div>
+      <h1>ブロスタ アカウント管理シート <span class="badge-count" id="accountCountBadge">0アカウント</span></h1>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="🔍 キャラ名・IDで検索" style="width: 170px;">
+    <select id="filterMode">
+      <option value="all">表示: 全アカウント</option>
+      <option value="star_only">★ マスター到達のみ</option>
+      <option value="non_star">★ マスター未到達（★以外）のみ</option>
+      <option value="has_max">検索キャラがMAXのみ</option>
+      <option value="has_hc">検索キャラが未カンストHCのみ</option>
+    </select>
+    <select id="sortSelect">
+      <option value="manual">並び順: 登録順</option>
+      <option value="trophy_desc">トロフィー多い順</option>
+      <option value="coin_desc">コイン多い順</option>
+      <option value="pp_desc">パワポ多い順</option>
+      <option value="max_desc">MAXキャラ多い順</option>
+    </select>
+    <button class="btn btn-gold" onclick="openAccountModal()">＋ アカウント追加</button>
+    <button class="btn" onclick="openBrawlerModal()">🖼️ キャラ画像・新キャラ追加</button>
+    <button class="btn" onclick="exportJSON()">💾 保存</button>
+    <label class="btn" style="cursor:pointer;">
+      📂 読込<input type="file" id="importFile" accept=".json" style="display:none;" onchange="importJSON(event)">
+    </label>
+  </div>
+</header>
+
+<div class="summary-bar" id="summaryBar"></div>
+
+<div class="sheet-container">
+  <div class="sheet-header">
+    <div>TROPHY / リソース</div>
+    <div>ID / マスター / スキン</div>
+    <div>パワー11のキャラ（上段: MAXカンスト / 下段: WIP未完成）</div>
+    <div>未カンストハイチャ持ち一覧 / lv9</div>
+  </div>
+  <div id="accountList"></div>
+</div>
+
+<!-- アカウント編集モーダル -->
+<div class="modal-backdrop" id="accountModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="accountModalTitle">アカウント編集</h2>
+      <button class="btn" onclick="closeModal('accountModal')">✕ 閉じる</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editAccId">
+
+      <div class="master-toggle-box">
+        <label class="master-toggle-label">
+          <input type="checkbox" id="editIsMaster">
+          <span>★ ガチバトル マスター到達（ONにすると★マーク付与＆絞り込み対象になります）</span>
+        </label>
+        <span style="font-size:11px; color:var(--text-muted);">未チェックは「★以外」扱い</span>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Supercell ID (表示名)</label>
+          <input type="text" id="editScId" placeholder="例: 000Alex2000">
+        </div>
+        <div class="form-group">
+          <label>プレイヤータグ (メモ用)</label>
+          <input type="text" id="editPlayerTag" placeholder="例: #2PP">
+        </div>
+        <div class="form-group">
+          <label>トロフィー (0〜999999)</label>
+          <input type="number" id="editTrophy" min="0" max="999999" value="0">
+        </div>
+        <div class="form-group">
+          <label>コイン (0〜999999)</label>
+          <input type="number" id="editCoin" min="0" max="999999" value="0">
+        </div>
+        <div class="form-group">
+          <label class="c-pp">パワポ (0〜999999)</label>
+          <input type="number" id="editPowerPoints" min="0" max="999999" value="0">
+        </div>
+        <div class="form-group">
+          <label class="c-gem">エメ (0〜999999)</label>
+          <input type="number" id="editGems" min="0" max="999999" value="0">
+        </div>
+      </div>
+
+      <!-- スキン所持数カードUI -->
+      <div class="skin-cards-grid">
+        <div class="skin-card card-hc">
+          <div class="skin-card-left">
+            <img class="skin-card-img" data-skin-icon="hc" alt="ハイパーチャージスキン">
+            <div>
+              <div class="skin-card-title c-hc">ハイパーチャージスキン</div>
+              <div class="skin-card-sub">所持数</div>
+            </div>
+          </div>
+          <input type="number" id="editSkinHc" min="0" value="0">
+        </div>
+
+        <div class="skin-card card-leg">
+          <div class="skin-card-left">
+            <img class="skin-card-img" data-skin-icon="leg" alt="レジェンドレアスキン">
+            <div>
+              <div class="skin-card-title c-leg">レジェンドレアスキン</div>
+              <div class="skin-card-sub">所持数</div>
+            </div>
+          </div>
+          <input type="number" id="editSkinLeg" min="0" value="0">
+        </div>
+
+        <div class="skin-card card-gold">
+          <div class="skin-card-left">
+            <img class="skin-card-img" data-skin-icon="gold" alt="トゥルーゴールドスキン">
+            <div>
+              <div class="skin-card-title c-gold">トゥルーゴールドスキン</div>
+              <div class="skin-card-sub">所持数</div>
+            </div>
+          </div>
+          <input type="number" id="editSkinGold" min="0" value="0">
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>MAX欄の補足メモ (例: バフィー無し)</label>
+          <input type="text" id="editMaxNote" placeholder="例: バフィー無し">
+        </div>
+        <div class="form-group">
+          <label>右欄の特記事項</label>
+          <input type="text" id="editRightNote" placeholder="例: 未カンスト全員ハイチャ持ち">
+        </div>
+      </div>
+
+      <!-- キャラ配置エディタ -->
+      <div>
+        <div class="target-tabs" id="targetTabs">
+          <button type="button" class="target-tab active" data-target="max" onclick="switchTarget('max')">① パワー11 MAX (カンスト)</button>
+          <button type="button" class="target-tab" data-target="wip" onclick="switchTarget('wip')">② パワー11 WIP (未完成)</button>
+          <button type="button" class="target-tab" data-target="unmaxHc" onclick="switchTarget('unmaxHc')">③ 未カンストハイチャ持ち</button>
+          <button type="button" class="target-tab" data-target="lv9" onclick="switchTarget('lv9')">④ lv9 キャラ枠</button>
+        </div>
+
+        <div class="selected-zone" style="margin-top:8px;">
+          <div class="selected-zone-title">
+            <span id="selectedZoneLabel">選択中の枠に入っているキャラ（クリックでバッジ切替: なし → ♡ → lv9 → lv10 → バ無）</span>
+            <span id="selectedZoneCount">0体</span>
+          </div>
+          <div class="brawler-chips" id="selectedBrawlersBox"></div>
+        </div>
+
+        <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+          <input type="text" id="paletteSearch" placeholder="パレット内検索..." oninput="renderPalette()" style="width:180px;">
+          <span style="font-size:11px; color:var(--text-muted);">下のパレットをクリックで追加／解除</span>
+        </div>
+        <div class="palette-grid" id="brawlerPalette" style="margin-top:6px;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div style="display:flex; gap:6px;">
+        <button type="button" class="btn btn-danger" id="deleteAccBtn" onclick="deleteCurrentAccount()">🗑️ このアカウントを削除</button>
+        <button type="button" class="btn" onclick="moveAccount(-1)">▲ 上へ</button>
+        <button type="button" class="btn" onclick="moveAccount(1)">▼ 下へ</button>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn" onclick="closeModal('accountModal')">キャンセル</button>
+        <button type="button" class="btn btn-primary" onclick="saveAccountForm()">保存する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- キャラ画像・新キャラ追加・順番変更モーダル -->
+<div class="modal-backdrop" id="brawlerModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>🖼️ キャラ画像設定 ＆ 新キャラ追加・並び替え</h2>
+      <button class="btn" onclick="closeModal('brawlerModal')">✕ 閉じる</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#111624; padding:10px; border-radius:8px; border:1px solid var(--border-strong); display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end;">
+        <div class="form-group">
+          <label>新キャラ名</label>
+          <input type="text" id="newBrawlerName" placeholder="例: 新キャラ名">
+        </div>
+        <div class="form-group">
+          <label>レアリティ (枠色)</label>
+          <select id="newBrawlerRarity">
+            <option value="starter">初期 (グレー)</option>
+            <option value="rare">レア (緑)</option>
+            <option value="superrare">スーパーレア (青)</option>
+            <option value="epic">ハイパーレア (紫)</option>
+            <option value="mythic" selected>ウルトラレア (赤)</option>
+            <option value="legendary">レジェンドレア (黄)</option>
+            <option value="ultralegendary">ウルトラレジェンドレア (虹/金)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>アイコン画像 (任意)</label>
+          <input type="file" id="newBrawlerImg" accept="image/*" style="width:185px;">
+        </div>
+        <button class="btn btn-primary" onclick="addNewBrawler()">＋ 新キャラを追加</button>
+        <button class="btn btn-gold" onclick="sortBrawlersByRarity()">↕ レアリティ順に整列</button>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <span style="font-size:12px; color:var(--text-muted);">「← / →」で順番変更、「✕」で追加キャラの削除ができます</span>
+        <label class="btn" style="cursor:pointer;">
+          📁 画像を一括アップロード<input type="file" accept="image/*" multiple style="display:none;" onchange="bulkUploadImages(event)">
+        </label>
+      </div>
+
+      <div class="brawler-mgr-grid" id="brawlerMgrGrid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SKIN_ICONS = {
+  hc: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140"><path d="M22 48 L38 14 L56 36 L78 12 L98 48 C108 66 106 96 86 116 C70 130 48 130 32 116 C12 96 12 66 22 48 Z" fill="#e800ff" stroke="#000" stroke-width="8" stroke-linejoin="round"/><ellipse cx="36" cy="54" rx="10" ry="7" transform="rotate(-25 36 54)" fill="#fff"/><circle cx="76" cy="44" r="10" fill="#a855f7"/><path d="M58 46 C66 46 72 52 72 60 C72 66 67 70 62 72 L88 94 C91 97 89 102 85 102 L35 102 C31 102 29 97 32 94 L56 72 C53 69 51 65 51 60 C51 52 54 46 58 46 Z M58 79 L44 93 L76 93 Z" fill="#fff" stroke="#000" stroke-width="5" stroke-linejoin="round"/></svg>`),
+  leg: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 130"><circle cx="60" cy="64" r="50" fill="#facc15" stroke="#000" stroke-width="7"/><ellipse cx="42" cy="40" rx="13" ry="9" transform="rotate(-25 42 40)" fill="#fff"/><path d="M58 34 C67 34 74 41 74 50 C74 57 69 62 63 64 L91 89 C94 92 92 98 87 98 L33 98 C28 98 26 92 29 89 L56 64 C52 61 50 56 50 50 C50 41 53 34 58 34 Z M58 72 L42 89 L78 89 Z" fill="#fff" stroke="#000" stroke-width="5" stroke-linejoin="round"/></svg>`),
+  gold: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 130"><circle cx="62" cy="66" r="46" fill="#f59e0b" stroke="#000" stroke-width="7"/><circle cx="56" cy="60" r="44" fill="#fbbf24" stroke="#000" stroke-width="7"/><circle cx="42" cy="54" r="8" fill="#f59e0b"/><circle cx="70" cy="54" r="8" fill="#f59e0b"/><path d="M39 74 Q56 90 73 74 Z" fill="#f59e0b"/></svg>`)
+};
+
+function getSkinIconSrc(type) {
+  return SKIN_ICONS[type] || "";
+}
+
+function applyStaticSkinIcons() {
+  document.querySelectorAll("[data-skin-icon]").forEach(el => {
+    const type = el.getAttribute("data-skin-icon");
+    el.src = getSkinIconSrc(type);
+  });
+}
+
+const RARITY_ORDER = ["starter", "rare", "superrare", "epic", "mythic", "legendary", "ultralegendary"];
+
+const DEFAULT_BRAWLERS = [
+  { id: "shelly", name: "シェリー", rarity: "starter" },
+  { id: "nita", name: "ニタ", rarity: "rare" },
+  { id: "colt", name: "コルト", rarity: "rare" },
+  { id: "bull", name: "ブル", rarity: "rare" },
+  { id: "brock", name: "ブロック", rarity: "rare" },
+  { id: "elprimo", name: "プリモ", rarity: "rare" },
+  { id: "barley", name: "バーリー", rarity: "rare" },
+  { id: "poco", name: "ポコ", rarity: "rare" },
+  { id: "rosa", name: "ローサ", rarity: "rare" },
+  { id: "jessie", name: "ジェシー", rarity: "superrare" },
+  { id: "dynamike", name: "マイク", rarity: "superrare" },
+  { id: "tick", name: "ティック", rarity: "superrare" },
+  { id: "8bit", name: "8ビット", rarity: "superrare" },
+  { id: "rico", name: "リコ", rarity: "superrare" },
+  { id: "darryl", name: "ダリル", rarity: "superrare" },
+  { id: "penny", name: "ペニー", rarity: "superrare" },
+  { id: "carl", name: "カール", rarity: "superrare" },
+  { id: "jacky", name: "ジャッキー", rarity: "superrare" },
+  { id: "gus", name: "ガス", rarity: "superrare" },
+  { id: "bo", name: "ボウ", rarity: "epic" },
+  { id: "emz", name: "Emz", rarity: "epic" },
+  { id: "stu", name: "ストゥー", rarity: "epic" },
+  { id: "piper", name: "エリザベス", rarity: "epic" },
+  { id: "pam", name: "パム", rarity: "epic" },
+  { id: "frank", name: "フランケン", rarity: "epic" },
+  { id: "bibi", name: "ビビ", rarity: "epic" },
+  { id: "bea", name: "ビー", rarity: "epic" },
+  { id: "nani", name: "ナーニ", rarity: "epic" },
+  { id: "edgar", name: "エドガー", rarity: "epic" },
+  { id: "griff", name: "グリフ", rarity: "epic" },
+  { id: "grom", name: "グロム", rarity: "epic" },
+  { id: "bonnie", name: "ボニー", rarity: "epic" },
+  { id: "gale", name: "ゲイル", rarity: "epic" },
+  { id: "colette", name: "コレット", rarity: "epic" },
+  { id: "belle", name: "ベル", rarity: "epic" },
+  { id: "ash", name: "アッシュ", rarity: "epic" },
+  { id: "lola", name: "ローラ", rarity: "epic" },
+  { id: "sam", name: "サム", rarity: "epic" },
+  { id: "mandy", name: "マンディ", rarity: "epic" },
+  { id: "maisie", name: "メイジー", rarity: "epic" },
+  { id: "hank", name: "ハンク", rarity: "epic" },
+  { id: "pearl", name: "パール", rarity: "epic" },
+  { id: "larry", name: "ラリー", rarity: "epic" },
+  { id: "angelo", name: "アンジェロ", rarity: "epic" },
+  { id: "berry", name: "ベリー", rarity: "epic" },
+  { id: "shade", name: "シェイド", rarity: "epic" },
+  { id: "meeple", name: "ミープル", rarity: "epic" },
+  { id: "mortis", name: "モーティス", rarity: "mythic" },
+  { id: "tara", name: "タラ", rarity: "mythic" },
+  { id: "gene", name: "ジーン", rarity: "mythic" },
+  { id: "max", name: "MAX", rarity: "mythic" },
+  { id: "mrp", name: "Mr.P", rarity: "mythic" },
+  { id: "sprout", name: "スプラウト", rarity: "mythic" },
+  { id: "byron", name: "バイロン", rarity: "mythic" },
+  { id: "squeak", name: "スクウィーク", rarity: "mythic" },
+  { id: "lou", name: "ルー", rarity: "mythic" },
+  { id: "ruffs", name: "ラフス", rarity: "mythic" },
+  { id: "buzz", name: "バズ", rarity: "mythic" },
+  { id: "fang", name: "ファング", rarity: "mythic" },
+  { id: "eve", name: "イヴ", rarity: "mythic" },
+  { id: "janet", name: "ジャネット", rarity: "mythic" },
+  { id: "otis", name: "オーティス", rarity: "mythic" },
+  { id: "buster", name: "バスター", rarity: "mythic" },
+  { id: "gray", name: "グレイ", rarity: "mythic" },
+  { id: "rt", name: "R-T", rarity: "mythic" },
+  { id: "willow", name: "ウィロー", rarity: "mythic" },
+  { id: "doug", name: "ダグ", rarity: "mythic" },
+  { id: "chuck", name: "チャック", rarity: "mythic" },
+  { id: "charlie", name: "チャーリー", rarity: "mythic" },
+  { id: "mico", name: "ミコ", rarity: "mythic" },
+  { id: "melodie", name: "メロディー", rarity: "mythic" },
+  { id: "lily", name: "リリー", rarity: "mythic" },
+  { id: "clancy", name: "クランシー", rarity: "mythic" },
+  { id: "moe", name: "モー", rarity: "mythic" },
+  { id: "juju", name: "ジュジュ", rarity: "mythic" },
+  { id: "ollie", name: "オーリー", rarity: "mythic" },
+  { id: "finx", name: "フィンクス", rarity: "mythic" },
+  { id: "lumi", name: "ルミ", rarity: "mythic" },
+  { id: "spike", name: "スパイク", rarity: "legendary" },
+  { id: "crow", name: "クロウ", rarity: "legendary" },
+  { id: "leon", name: "レオン", rarity: "legendary" },
+  { id: "sandy", name: "サンディ", rarity: "legendary" },
+  { id: "amber", name: "アンバー", rarity: "legendary" },
+  { id: "meg", name: "メグ", rarity: "legendary" },
+  { id: "surge", name: "サージ", rarity: "legendary" },
+  { id: "chester", name: "チェスター", rarity: "legendary" },
+  { id: "cordelius", name: "コーデリアス", rarity: "legendary" },
+  { id: "kit", name: "キット", rarity: "legendary" },
+  { id: "draco", name: "ドラコ", rarity: "legendary" },
+  { id: "kenji", name: "ケンジ", rarity: "legendary" }
+];
+
+const SAMPLE_ACCOUNTS = [
+  {
+    id: "acc_1",
+    scId: "000Alex2000",
+    playerTag: "#2PP",
+    isMaster: true,
+    trophy: 9300,
+    coin: 3761,
+    powerPoints: 2500,
+    gems: 115,
+    skinGold: 3,
+    skinLeg: 8,
+    skinHc: 6,
+    maxNote: "バフィー無し",
+    rightNote: "",
+    max: [
+      { id: "shelly", badge: "" }, { id: "colt", badge: "" }, { id: "bull", badge: "" },
+      { id: "brock", badge: "" }, { id: "elprimo", badge: "" }, { id: "barley", badge: "" },
+      { id: "jessie", badge: "" }, { id: "dynamike", badge: "" }, { id: "rico", badge: "" },
+      { id: "darryl", badge: "" }, { id: "mortis", badge: "" }, { id: "tara", badge: "" },
+      { id: "max", badge: "" }, { id: "spike", badge: "" }, { id: "crow", badge: "nobuff" },
+      { id: "leon", badge: "" }, { id: "sandy", badge: "nobuff" }
+    ],
+    wip: [
+      { id: "edgar", badge: "heart" }, { id: "griff", badge: "" }, { id: "belle", badge: "" }, { id: "surge", badge: "" }
+    ],
+    unmaxHc: [
+      { id: "nita", badge: "" }, { id: "rosa", badge: "" }, { id: "tick", badge: "" },
+      { id: "penny", badge: "" }, { id: "carl", badge: "" }, { id: "jacky", badge: "" },
+      { id: "bibi", badge: "" }, { id: "nani", badge: "" }, { id: "colette", badge: "" },
+      { id: "gene", badge: "" }, { id: "sprout", badge: "" }, { id: "buzz", badge: "" },
+      { id: "fang", badge: "" }, { id: "charlie", badge: "" }, { id: "mico", badge: "" }
+    ],
+    lv9: [
+      { id: "poco", badge: "" }, { id: "gus", badge: "" }, { id: "bea", badge: "" },
+      { id: "lou", badge: "" }, { id: "ruffs", badge: "" }, { id: "otis", badge: "" }
+    ]
+  }
+];
+
+const STORAGE_KEY = "bs_account_manager_v6";
+let state = { brawlers: [], accounts: [] };
+let editingState = null;
+let currentTarget = "max";
+
+function loadState() {
+  const saved = localStorage.getItem(STORAGE_KEY)
+    || localStorage.getItem("bs_account_manager_v5")
+    || localStorage.getItem("bs_account_manager_v4")
+    || localStorage.getItem("bs_account_manager_v3")
+    || localStorage.getItem("bs_account_manager_v2");
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      state.brawlers = parsed.brawlers && parsed.brawlers.length ? parsed.brawlers : [...DEFAULT_BRAWLERS];
+      state.accounts = (parsed.accounts || []).map(a => ({
+        ...a,
+        isMaster: Boolean(a.isMaster),
+        powerPoints: Number(a.powerPoints || 0)
+      }));
+      return;
+    } catch (e) { console.error(e); }
+  }
+  state.brawlers = [...DEFAULT_BRAWLERS];
+  state.accounts = JSON.parse(JSON.stringify(SAMPLE_ACCOUNTS));
+  saveState();
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function getBrawler(id) {
+  return state.brawlers.find(b => b.id === id) || { id, name: id, rarity: "rare" };
+}
+
+function rarityStyle(rarity) {
+  const map = {
+    starter: "#64748b",
+    rare: "#16a34a",
+    superrare: "#2563eb",
+    epic: "#9333ea",
+    mythic: "#dc2626",
+    legendary: "#ca8a04",
+    ultralegendary: "linear-gradient(135deg, #f59e0b, #ec4899, #8b5cf6)"
+  };
+  return map[rarity] || "#334155";
+}
+
+function renderChip(item, searchQuery = "", clickable = false, idx = -1) {
+  const b = getBrawler(item.id);
+  const isMatch = searchQuery && b.name.toLowerCase().includes(searchQuery.toLowerCase());
+  const isDimmed = searchQuery && !isMatch;
+
+  let badgeHtml = "";
+  if (item.badge === "heart") badgeHtml = `<span class="mini-badge mb-heart">♡</span>`;
+  else if (item.badge === "lv9") badgeHtml = `<span class="mini-badge mb-lv9">lv9</span>`;
+  else if (item.badge === "lv10") badgeHtml = `<span class="mini-badge mb-lv10">lv10</span>`;
+  else if (item.badge === "nobuff") badgeHtml = `<span class="mini-badge mb-nobuff">バ無</span>`;
+
+  const classes = [
+    "b-chip",
+    b.img ? "has-img" : "no-img",
+    isMatch ? "highlight-match" : "",
+    isDimmed ? "dimmed" : ""
+  ].join(" ");
+
+  const bgStyle = b.img ? "" : `background:${rarityStyle(b.rarity)};`;
+  const clickAttr = clickable ? `onclick="cycleBadge(${idx})" style="cursor:pointer;${bgStyle}" title="クリックでバッジ切替"` : `style="${bgStyle}" title="${b.name}"`;
+
+  if (b.img) {
+    return `<div class="${classes}" ${clickAttr}><img src="${b.img}" alt="${b.name}">${badgeHtml}</div>`;
+  }
+  return `<div class="${classes}" ${clickAttr}>${b.name}${badgeHtml}</div>`;
+}
+
+function renderAll() {
+  applyStaticSkinIcons();
+  const listEl = document.getElementById("accountList");
+  const query = document.getElementById("searchInput").value.trim();
+  const filterMode = document.getElementById("filterMode").value;
+  const sortMode = document.getElementById("sortSelect").value;
+
+  let filtered = [...state.accounts];
+
+  if (filterMode === "star_only") {
+    filtered = filtered.filter(acc => Boolean(acc.isMaster));
+  } else if (filterMode === "non_star") {
+    filtered = filtered.filter(acc => !acc.isMaster);
+  }
+
+  if (query) {
+    filtered = filtered.filter(acc => {
+      const inMax = (acc.max || []).some(x => getBrawler(x.id).name.includes(query));
+      const inWip = (acc.wip || []).some(x => getBrawler(x.id).name.includes(query));
+      const inHc = (acc.unmaxHc || []).some(x => getBrawler(x.id).name.includes(query));
+      const inLv9 = (acc.lv9 || []).some(x => getBrawler(x.id).name.includes(query));
+      const matchIdOrTag = (acc.scId || "").toLowerCase().includes(query.toLowerCase())
+        || (acc.playerTag || "").toLowerCase().includes(query.toLowerCase());
+      if (filterMode === "has_max") return inMax;
+      if (filterMode === "has_hc") return inHc;
+      return inMax || inWip || inHc || inLv9 || matchIdOrTag;
+    });
+  }
+
+  if (sortMode === "trophy_desc") filtered.sort((a, b) => (b.trophy || 0) - (a.trophy || 0));
+  else if (sortMode === "coin_desc") filtered.sort((a, b) => (b.coin || 0) - (a.coin || 0));
+  else if (sortMode === "pp_desc") filtered.sort((a, b) => (b.powerPoints || 0) - (a.powerPoints || 0));
+  else if (sortMode === "max_desc") filtered.sort((a, b) => (b.max?.length || 0) - (a.max?.length || 0));
+
+  const masterCount = state.accounts.filter(a => a.isMaster).length;
+  const totalTrophy = state.accounts.reduce((s, a) => s + Number(a.trophy || 0), 0);
+  const totalCoin = state.accounts.reduce((s, a) => s + Number(a.coin || 0), 0);
+  const totalPp = state.accounts.reduce((s, a) => s + Number(a.powerPoints || 0), 0);
+  const totalGems = state.accounts.reduce((s, a) => s + Number(a.gems || 0), 0);
+  const totalHc = state.accounts.reduce((s, a) => s + Number(a.skinHc || 0), 0);
+  const totalLeg = state.accounts.reduce((s, a) => s + Number(a.skinLeg || 0), 0);
+  const totalGold = state.accounts.reduce((s, a) => s + Number(a.skinGold || 0), 0);
+
+  document.getElementById("accountCountBadge").textContent = `${filtered.length} / ${state.accounts.length}アカウント`;
+  document.getElementById("summaryBar").innerHTML = `
+    <span>★マスター: <b class="c-leg">${masterCount}垢</b></span>
+    <span>全垢合計トロ: <b>${totalTrophy.toLocaleString()}</b></span>
+    <span>合計コイン: <b class="c-gold">${totalCoin.toLocaleString()}</b></span>
+    <span>合計パワポ: <b class="c-pp">${totalPp.toLocaleString()}</b></span>
+    <span>合計エメ: <b class="c-gem">${totalGems.toLocaleString()}</b></span>
+    <span style="display:inline-flex;align-items:center;gap:4px;"><img src="${getSkinIconSrc("hc")}" class="skin-icon-img" alt="">ハイチャスキン: <b class="c-hc">${totalHc}</b></span>
+    <span style="display:inline-flex;align-items:center;gap:4px;"><img src="${getSkinIconSrc("leg")}" class="skin-icon-img" alt="">レジェレアスキン: <b class="c-leg">${totalLeg}</b></span>
+    <span style="display:inline-flex;align-items:center;gap:4px;"><img src="${getSkinIconSrc("gold")}" class="skin-icon-img" alt="">ゴールドスキン: <b class="c-gold">${totalGold}</b></span>
+    <span style="margin-left:auto; font-size:11px;">💡 各行をクリックすると編集できます</span>
+  `;
+
+  if (!filtered.length) {
+    listEl.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-muted);background:var(--bg-row);border:2px solid var(--border-strong);border-radius:8px;">条件に一致するアカウントはありません</div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(acc => {
+    const maxChips = (acc.max || []).map(x => renderChip(x, query)).join("");
+    const wipChips = (acc.wip || []).map(x => renderChip(x, query)).join("");
+    const hcChips = (acc.unmaxHc || []).map(x => renderChip(x, query)).join("");
+    const lv9Chips = (acc.lv9 || []).map(x => renderChip(x, query)).join("");
+
+    return `
+      <div class="account-row ${acc.isMaster ? "is-master" : ""}" onclick="openAccountModal('${acc.id}')">
+        <div class="cell stats-col">
+          <div class="stat-item">
+            <span class="stat-label">TROPHY</span>
+            <span class="stat-val c-gold">${Number(acc.trophy || 0).toLocaleString()}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">COIN</span>
+            <span class="stat-val c-gold">${Number(acc.coin || 0).toLocaleString()}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label c-pp">パワポ</span>
+            <span class="stat-val c-pp">${Number(acc.powerPoints || 0).toLocaleString()}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label c-gem">エメ</span>
+            <span class="stat-val c-gem">${Number(acc.gems || 0).toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div class="cell id-skin-col">
+          <div class="sc-id-header">
+            ${acc.isMaster ? `<span class="master-badge">★ MASTER</span>` : ""}
+            <div class="sc-id-box">${escapeHtml(acc.scId || "名称未設定")}</div>
+            ${acc.playerTag ? `<span class="sc-tag">${escapeHtml(acc.playerTag)}</span>` : ""}
+          </div>
+          <div class="skins-vertical">
+            <div class="skin-line">
+              <span class="skin-line-left">
+                <img src="${getSkinIconSrc("hc")}" class="skin-icon-img" alt="">
+                <span class="skin-line-name c-hc">ハイチャスキン</span>
+              </span>
+              <span class="c-hc">${acc.skinHc || 0}</span>
+            </div>
+            <div class="skin-line">
+              <span class="skin-line-left">
+                <img src="${getSkinIconSrc("leg")}" class="skin-icon-img" alt="">
+                <span class="skin-line-name c-leg">レジェレアスキン</span>
+              </span>
+              <span class="c-leg">${acc.skinLeg || 0}</span>
+            </div>
+            <div class="skin-line">
+              <span class="skin-line-left">
+                <img src="${getSkinIconSrc("gold")}" class="skin-icon-img" alt="">
+                <span class="skin-line-name c-gold">ゴールドスキン</span>
+              </span>
+              <span class="c-gold">${acc.skinGold || 0}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cell brawler-section">
+          <div>
+            <div class="tier-row">
+              <span class="tier-tag tag-max">MAX</span>
+              <div class="brawler-chips">${maxChips || '<span style="color:#475569;font-size:11px;">なし</span>'}</div>
+              <span class="tier-count">${(acc.max || []).length}体</span>
+            </div>
+            ${acc.maxNote ? `<div style="padding-left:46px;"><span class="note-pill">${escapeHtml(acc.maxNote)}</span></div>` : ""}
+          </div>
+
+          <div class="tier-row tier-divider">
+            <span class="tier-tag tag-wip">WIP</span>
+            <div class="brawler-chips">${wipChips || '<span style="color:#475569;font-size:11px;">なし</span>'}</div>
+            <span class="tier-count">${(acc.wip || []).length}体</span>
+          </div>
+        </div>
+
+        <div class="cell brawler-section">
+          <div>
+            ${acc.rightNote ? `<div class="all-hc-banner" style="margin-bottom:5px;">${escapeHtml(acc.rightNote)}</div>` : ""}
+            <div class="tier-row">
+              <span class="tier-tag tag-hc">HC</span>
+              <div class="brawler-chips">${hcChips || '<span style="color:#475569;font-size:11px;">なし</span>'}</div>
+              <span class="tier-count">${(acc.unmaxHc || []).length}体</span>
+            </div>
+          </div>
+
+          <div class="tier-row tier-divider">
+            <span class="tier-tag tag-lv9">lv9</span>
+            <div class="brawler-chips">${lv9Chips || '<span style="color:#475569;font-size:11px;">なし</span>'}</div>
+            <span class="tier-count">${(acc.lv9 || []).length}体</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, s => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[s]));
+}
+
+function openAccountModal(accId = null) {
+  applyStaticSkinIcons();
+  const isNew = !accId;
+  document.getElementById("accountModalTitle").textContent = isNew ? "新規アカウント追加" : "アカウント編集";
+  document.getElementById("deleteAccBtn").style.display = isNew ? "none" : "inline-flex";
+
+  if (isNew) {
+    editingState = {
+      id: "acc_" + Date.now(),
+      scId: "",
+      playerTag: "",
+      isMaster: false,
+      trophy: 0,
+      coin: 0,
+      powerPoints: 0,
+      gems: 0,
+      skinGold: 0,
+      skinLeg: 0,
+      skinHc: 0,
+      maxNote: "",
+      rightNote: "",
+      max: [],
+      wip: [],
+      unmaxHc: [],
+      lv9: []
+    };
+  } else {
+    const found = state.accounts.find(a => a.id === accId);
+    editingState = JSON.parse(JSON.stringify(found));
+  }
+
+  document.getElementById("editAccId").value = editingState.id;
+  document.getElementById("editIsMaster").checked = Boolean(editingState.isMaster);
+  document.getElementById("editScId").value = editingState.scId;
+  document.getElementById("editPlayerTag").value = editingState.playerTag || "";
+  document.getElementById("editTrophy").value = editingState.trophy;
+  document.getElementById("editCoin").value = editingState.coin;
+  document.getElementById("editPowerPoints").value = editingState.powerPoints || 0;
+  document.getElementById("editGems").value = editingState.gems;
+  document.getElementById("editSkinHc").value = editingState.skinHc || 0;
+  document.getElementById("editSkinLeg").value = editingState.skinLeg || 0;
+  document.getElementById("editSkinGold").value = editingState.skinGold || 0;
+  document.getElementById("editMaxNote").value = editingState.maxNote || "";
+  document.getElementById("editRightNote").value = editingState.rightNote || "";
+
+  switchTarget("max");
+  document.getElementById("accountModal").classList.add("open");
+}
+
+function switchTarget(target) {
+  currentTarget = target;
+  document.querySelectorAll(".target-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.target === target);
+  });
+  renderSelectedZone();
+  renderPalette();
+}
+
+function renderSelectedZone() {
+  const list = editingState[currentTarget] || [];
+  document.getElementById("selectedZoneCount").textContent = `${list.length}体`;
+  document.getElementById("selectedBrawlersBox").innerHTML = list.map((item, idx) =>
+    renderChip(item, "", true, idx)
+  ).join("") || '<span style="color:#64748b;font-size:11px;">下のパレットからキャラをクリックして追加してください</span>';
+}
+
+function cycleBadge(idx) {
+  const order = ["", "heart", "lv9", "lv10", "nobuff"];
+  const item = editingState[currentTarget][idx];
+  item.badge = order[(order.indexOf(item.badge || "") + 1) % order.length];
+  renderSelectedZone();
+}
+
+function renderPalette() {
+  const q = document.getElementById("paletteSearch").value.trim().toLowerCase();
+  const activeIds = new Set((editingState[currentTarget] || []).map(x => x.id));
+
+  const html = state.brawlers
+    .filter(b => !q || b.name.toLowerCase().includes(q) || b.id.toLowerCase().includes(q))
+    .map(b => {
+      const inList = activeIds.has(b.id);
+      return `
+        <div class="palette-item ${inList ? "in-list" : ""}"
+             style="background:${rarityStyle(b.rarity)};"
+             onclick="toggleBrawlerInTarget('${b.id}')">
+          ${b.img ? `<img src="${b.img}">` : ""}
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.name}</span>
+        </div>
+      `;
+    }).join("");
+  document.getElementById("brawlerPalette").innerHTML = html;
+}
+
+function toggleBrawlerInTarget(brawlerId) {
+  const list = editingState[currentTarget];
+  const idx = list.findIndex(x => x.id === brawlerId);
+  if (idx >= 0) list.splice(idx, 1);
+  else list.push({ id: brawlerId, badge: "" });
+  renderSelectedZone();
+  renderPalette();
+}
+
+function saveAccountForm() {
+  editingState.scId = document.getElementById("editScId").value.trim() || "名称未設定";
+  editingState.playerTag = document.getElementById("editPlayerTag").value.trim();
+  editingState.isMaster = document.getElementById("editIsMaster").checked;
+  editingState.trophy = Math.min(999999, Math.max(0, Number(document.getElementById("editTrophy").value) || 0));
+  editingState.coin = Math.min(999999, Math.max(0, Number(document.getElementById("editCoin").value) || 0));
+  editingState.powerPoints = Math.min(999999, Math.max(0, Number(document.getElementById("editPowerPoints").value) || 0));
+  editingState.gems = Math.min(999999, Math.max(0, Number(document.getElementById("editGems").value) || 0));
+  editingState.skinHc = Math.max(0, Number(document.getElementById("editSkinHc").value) || 0);
+  editingState.skinLeg = Math.max(0, Number(document.getElementById("editSkinLeg").value) || 0);
+  editingState.skinGold = Math.max(0, Number(document.getElementById("editSkinGold").value) || 0);
+  editingState.maxNote = document.getElementById("editMaxNote").value.trim();
+  editingState.rightNote = document.getElementById("editRightNote").value.trim();
+
+  const existingIdx = state.accounts.findIndex(a => a.id === editingState.id);
+  if (existingIdx >= 0) state.accounts[existingIdx] = editingState;
+  else state.accounts.push(editingState);
+
+  saveState();
+  renderAll();
+  closeModal("accountModal");
+}
+
+function deleteCurrentAccount() {
+  if (!confirm("このアカウントを削除しますか？")) return;
+  state.accounts = state.accounts.filter(a => a.id !== editingState.id);
+  saveState();
+  renderAll();
+  closeModal("accountModal");
+}
+
+function moveAccount(dir) {
+  const idx = state.accounts.findIndex(a => a.id === editingState.id);
+  if (idx < 0) return;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= state.accounts.length) return;
+  const temp = state.accounts[idx];
+  state.accounts[idx] = state.accounts[newIdx];
+  state.accounts[newIdx] = temp;
+  saveState();
+  renderAll();
+}
+
+/* キャラ画像設定・新キャラ追加・順番変更・削除 */
+function openBrawlerModal() {
+  renderBrawlerMgr();
+  document.getElementById("brawlerModal").classList.add("open");
+}
+
+function renderBrawlerMgr() {
+  const grid = document.getElementById("brawlerMgrGrid");
+  grid.innerHTML = state.brawlers.map((b, i) => `
+    <div class="brawler-mgr-card">
+      <div class="brawler-mgr-info">
+        <div class="b-chip ${b.img ? "has-img" : "no-img"}" style="background:${rarityStyle(b.rarity)};flex-shrink:0;">
+          ${b.img ? `<img src="${b.img}">` : b.name.slice(0,2)}
+        </div>
+        <span title="${escapeHtml(b.name)}">${escapeHtml(b.name)}</span>
+      </div>
+      <div class="mgr-actions">
+        <button type="button" class="mini-btn" onclick="moveBrawler(${i}, -1)" title="左へ（前へ）">←</button>
+        <button type="button" class="mini-btn" onclick="moveBrawler(${i}, 1)" title="右へ（次へ）">→</button>
+        <label class="mini-btn" style="cursor:pointer;" title="画像設定">
+          画像<input type="file" accept="image/*" style="display:none;" onchange="uploadSingleBrawlerImg(event, ${i})">
+        </label>
+        <button type="button" class="mini-btn del" onclick="deleteBrawler(${i})" title="削除">✕</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function moveBrawler(idx, dir) {
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= state.brawlers.length) return;
+  const temp = state.brawlers[idx];
+  state.brawlers[idx] = state.brawlers[newIdx];
+  state.brawlers[newIdx] = temp;
+  saveState();
+  renderBrawlerMgr();
+  if (editingState) renderPalette();
+}
+
+function deleteBrawler(idx) {
+  const target = state.brawlers[idx];
+  if (!target) return;
+  if (!confirm(`「${target.name}」をキャラ一覧から削除しますか？`)) return;
+  state.brawlers.splice(idx, 1);
+  saveState();
+  renderBrawlerMgr();
+  if (editingState) renderPalette();
+  renderAll();
+}
+
+function sortBrawlersByRarity() {
+  state.brawlers.sort((a, b) => {
+    const ia = RARITY_ORDER.indexOf(a.rarity);
+    const ib = RARITY_ORDER.indexOf(b.rarity);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+  saveState();
+  renderBrawlerMgr();
+  if (editingState) renderPalette();
+}
+
+function resizeImageToDataUrl(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, 64, 64);
+        resolve(canvas.toDataURL("image/webp", 0.85));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadSingleBrawlerImg(event, idx) {
+  const file = event.target.files[0];
+  if (!file) return;
+  state.brawlers[idx].img = await resizeImageToDataUrl(file);
+  saveState();
+  renderBrawlerMgr();
+  renderAll();
+}
+
+async function bulkUploadImages(event) {
+  const files = Array.from(event.target.files);
+  let matched = 0;
+  for (const file of files) {
+    const baseName = file.name.replace(/\.[^.]+$/, "").toLowerCase();
+    const target = state.brawlers.find(b => b.id.toLowerCase() === baseName || b.name.toLowerCase() === baseName);
+    if (target) {
+      target.img = await resizeImageToDataUrl(file);
+      matched++;
+    }
+  }
+  saveState();
+  renderBrawlerMgr();
+  renderAll();
+  alert(`${matched}件のキャラ画像を自動紐づけしました！`);
+}
+
+async function addNewBrawler() {
+  const name = document.getElementById("newBrawlerName").value.trim();
+  const rarity = document.getElementById("newBrawlerRarity").value;
+  const fileInput = document.getElementById("newBrawlerImg");
+  if (!name) return alert("キャラ名を入力してください");
+
+  const newEntry = { id: "custom_" + Date.now(), name, rarity };
+  if (fileInput.files[0]) {
+    newEntry.img = await resizeImageToDataUrl(fileInput.files[0]);
+  }
+  state.brawlers.push(newEntry);
+  saveState();
+  document.getElementById("newBrawlerName").value = "";
+  fileInput.value = "";
+  renderBrawlerMgr();
+  if (editingState) renderPalette();
+  alert(`新キャラ「${name}」を追加しました！`);
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `brawlstars_accounts_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (imported.accounts) {
+        state = imported;
+        if (!state.brawlers || !state.brawlers.length) state.brawlers = [...DEFAULT_BRAWLERS];
+        state.accounts = state.accounts.map(a => ({
+          ...a,
+          isMaster: Boolean(a.isMaster),
+          powerPoints: Number(a.powerPoints || 0)
+        }));
+        saveState();
+        renderAll();
+        alert("バックアップデータを復元しました！");
+      }
+    } catch (err) {
+      alert("ファイルの読み込みに失敗しました");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove("open");
+}
+
+document.getElementById("searchInput").addEventListener("input", renderAll);
+document.getElementById("filterMode").addEventListener("change", renderAll);
+document.getElementById("sortSelect").addEventListener("change", renderAll);
+
+loadState();
+renderAll();
+</script>
+</body>
+</html>
